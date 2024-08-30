@@ -52,19 +52,19 @@ class PTBPersistence(BasePersistence):
         )
 
 
-    async def update_user_data(self, user_id: int, local_data: dict) -> None:
+    async def update_user_data(self, user_id: int, data: dict) -> None:
         return await self._data_store.update_data(
             data_type='user',
             data_id=user_id,
-            local_data=local_data
+            local_data=data
         )
 
 
-    async def refresh_user_data(self, user_id: int, local_data: dict) -> None:
+    async def refresh_user_data(self, user_id: int, user_data: dict) -> None:
         return await self._data_store.refresh_data(
             data_type='user',
             data_id=user_id,
-            local_data=local_data
+            local_data=user_data
         )
 
 
@@ -82,19 +82,19 @@ class PTBPersistence(BasePersistence):
         )
     
 
-    async def update_chat_data(self, chat_id: int, local_data: dict) -> None:
+    async def update_chat_data(self, chat_id: int, data: dict) -> None:
         return await self._data_store.update_data(
             data_type='chat',
             data_id=chat_id,
-            local_data=local_data
+            local_data=data
         )
 
 
-    async def refresh_chat_data(self, chat_id: int, local_data: dict) -> None:
+    async def refresh_chat_data(self, chat_id: int, chat_data: dict) -> None:
         return await self._data_store.refresh_data(
             data_type='chat',
             data_id=chat_id,
-            local_data=local_data
+            local_data=chat_data
         )
 
 
@@ -112,19 +112,19 @@ class PTBPersistence(BasePersistence):
         )
     
 
-    async def update_bot_data(self, local_data: dict) -> None:
+    async def update_bot_data(self, data: dict) -> None:
         return await self._data_store.update_data(
             data_type='bot',
             data_id=self.bot.id,
-            local_data=local_data
+            local_data=data
         )
 
 
-    async def refresh_bot_data(self, local_data: dict) -> None:
+    async def refresh_bot_data(self, bot_data: dict) -> None:
         return await self._data_store.refresh_data(
             data_type='bot',
             data_id=self.bot.id,
-            local_data=local_data
+            local_data=bot_data
         )
     
 
@@ -138,12 +138,12 @@ class PTBPersistence(BasePersistence):
     async def update_conversation(self,
             name: str,
             key: Tuple[int | str, ...],
-            local_state: object | None
+            new_state: object | None
             ) -> None:
         return await self._data_store.update_conversation(
             name=name,
             key=key,
-            local_state=local_state
+            local_state=new_state
         )
     
 
@@ -153,9 +153,9 @@ class PTBPersistence(BasePersistence):
         return await super().get_callback_data()
 
 
-    async def update_callback_data(self, local_data: tuple) -> None:
+    async def update_callback_data(self, data: tuple) -> None:
         # TODO: Develop method
-        return await super().update_callback_data(local_data)
+        return await super().update_callback_data(data)
 
 
     # Flush methods
