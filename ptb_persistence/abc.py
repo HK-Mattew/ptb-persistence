@@ -33,7 +33,7 @@ class DataStore(metaclass=ABCMeta):
     @abstractmethod
     async def update_data(self,
             data_type: Literal['user', 'chat', 'bot'],
-            data_id: int, new_data: dict) -> None:
+            data_id: int, local_data: dict) -> None:
         """
         """
 
@@ -66,7 +66,7 @@ class DataStore(metaclass=ABCMeta):
     async def update_conversation(self,
             name: str,
             key: Tuple[Union[int, str], ...],
-            new_state: object | None
+            local_state: object | None
             ) -> None:
         """
         """

@@ -43,7 +43,7 @@ class DataType:
         self._exist = True
 
 
-    def cleanup_new_data(self, data: dict) -> None:
+    def cleanup_local_data(self, data: dict) -> None:
         for item in self.ignore_keys:
             data.pop(item, None)
 
@@ -177,32 +177,28 @@ class MongoDBDataStore(BaseDataStore):
         return data
 
 
-    async def update_data(self, data_type, data_id: int, new_data: dict) -> None:
+    async def update_data(self, data_type, data_id: int, local_data: dict) -> None:
         await self.post_init()
 
         data_type = self._get_data_type(data_type)
         if not data_type.exists():
             return
         
-        data_type.cleanup_new_data(new_data)
+        data_type.cleanup_local_data(local_data)
 
         await data_type.collection.replace_one(
             {"_id": data_id},
-            new_data,
+            local_data,
             upsert=True
             )
 
 
     async def refresh_data(self, data_type, data_id: int, local_data: dict) -> None:
-
-        data = await self.get_data(
+        return await self.update_data(
             data_type=data_type,
-            data_id=data_id
+            data_id=data_id,
+            local_data=local_data
         )
-        single_data = data.get(data_id, {})
-
-        if single_data:
-            local_data.update(single_data)
 
 
     async def drop_data(self, data_type, data_id: int) -> None:
@@ -224,7 +220,7 @@ class MongoDBDataStore(BaseDataStore):
             data_type='conversations'
         )
         if not data_type.exists():
-            return
+            return {}
 
         data: dict = {}
 
@@ -238,13 +234,13 @@ class MongoDBDataStore(BaseDataStore):
         else:
             data[name] = {}
 
-        return data
+        return data[name]
 
 
     async def update_conversation(self,
             name: str,
             key: Tuple[Union[int, str], ...],
-            new_state: object | None
+            local_state: object | None
             ) -> None:
         await self.post_init()
 
@@ -256,7 +252,7 @@ class MongoDBDataStore(BaseDataStore):
         
         await data_type.collection.replace_one(
             {'_id': name},
-            {str(key): new_state},
+            {str(key): local_state},
             upsert=True
         )
 

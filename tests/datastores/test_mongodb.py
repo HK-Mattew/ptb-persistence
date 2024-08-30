@@ -21,7 +21,7 @@ async def test_update_data(motor_client: AsyncIOMotorClient):
     result = await data_store.update_data(
         data_type='user',
         data_id=12345678,
-        new_data={
+        local_data={
             'my_key': 'value of my key'
         }
     )
@@ -56,17 +56,27 @@ async def test_refresh_data(motor_client: AsyncIOMotorClient):
         collection_userdata='userdata'
     )
 
-    user_data = {}
+    local_user_data = {
+        'my_key': 'value of my key',
+        'other_key': 'value of other key'
+    }
     
     result = await data_store.refresh_data(
         data_type='user',
         data_id=12345678,
-        local_data=user_data
+        local_data=local_user_data
     )
 
     assert result is None
-    assert user_data == {
-        'my_key': 'value of my key'
+
+    store_user_datas = await data_store.get_data(
+        data_type='user',
+        data_id=12345678
+    )
+    assert 12345678 in store_user_datas
+    assert store_user_datas[12345678] == {
+        'my_key': 'value of my key',
+        'other_key': 'value of other key'
     }
 
 
@@ -105,7 +115,7 @@ async def test_update_conversation(motor_client: AsyncIOMotorClient):
     result = await data_store.update_conversation(
         name='chatconv',
         key=(12345678, 12345678),
-        new_state={
+        local_state={
             'ping': 'pong'
         }
     )
@@ -127,8 +137,8 @@ async def test_get_conversations(motor_client: AsyncIOMotorClient):
 
     assert isinstance(result, dict)
     assert len(result) == 1
-    assert 'chatconv' in result
-    assert result['chatconv'][(12345678, 12345678)] == {
+    assert (12345678, 12345678) in result
+    assert result[(12345678, 12345678)] == {
         'ping': 'pong'
     }
 
