@@ -19,6 +19,7 @@ class PTBPersistence(BasePersistence):
         """
         Persistent data class for PTB.
 
+
         :param data_store (:obj:`DataStore`) The data store where data will be persisted
             
             [Example]
@@ -144,6 +145,17 @@ class PTBPersistence(BasePersistence):
             key=key,
             new_state=new_state
         )
+    
+
+    # Callback methods
+    async def get_callback_data(self) -> tuple | None:
+        # TODO: Develop method
+        return await super().get_callback_data()
+
+
+    async def update_callback_data(self, data: tuple) -> None:
+        # TODO: Develop method
+        return await super().update_callback_data(data)
 
 
     # Flush methods
