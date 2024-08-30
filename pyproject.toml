@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "ptb-persistence"
+version = "0.1.0"
+description = "Persistent data for python-telegram-bot."
+authors = ["HK-Mattew <mattewsub6565@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+python-telegram-bot = ">=20.1"
+motor = "^3.1.2"
+
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+pytest-asyncio = "^0.24.0"
+coverage = "^7.6.1"
+
+
+[tool.pytest.ini_options]
+pythonpath = "."
+addopts = '-p no:warnings'
+asyncio_default_fixture_loop_scope = "session"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
