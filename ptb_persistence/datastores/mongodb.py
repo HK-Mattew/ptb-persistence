@@ -13,6 +13,7 @@ from typing import (
     )
 
 from telegram.ext import PersistenceInput
+import copy
 import ast
 
 
@@ -184,6 +185,7 @@ class MongoDBDataStore(BaseDataStore):
         if not data_type.exists():
             return
         
+        local_data = copy.deepcopy(local_data)
         data_type.cleanup_local_data(local_data)
 
         await data_type.collection.replace_one(
@@ -249,6 +251,9 @@ class MongoDBDataStore(BaseDataStore):
         )
         if not data_type.exists():
             return
+        
+        local_state = copy.deepcopy(local_state)
+        data_type.cleanup_local_data(local_state)
         
         await data_type.collection.replace_one(
             {'_id': name},
