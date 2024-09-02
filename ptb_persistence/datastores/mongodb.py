@@ -13,6 +13,7 @@ from typing import (
     )
 
 from telegram.ext import PersistenceInput
+import pymongo
 import copy
 import ast
 
@@ -196,10 +197,27 @@ class MongoDBDataStore(BaseDataStore):
 
 
     async def refresh_data(self, data_type, data_id: int, local_data: dict) -> None:
-        return await self.update_data(
-            data_type=data_type,
-            data_id=data_id,
-            local_data=local_data
+        await self.post_init()
+
+        data_type = self._get_data_type(data_type)
+        if not data_type.exists():
+            return
+        
+        local_data_copy = copy.deepcopy(local_data)
+        data_type.cleanup_local_data(local_data_copy)
+
+        # Synchronize database with local data and get new document.
+        synchronized_data: dict = await data_type.collection.find_one_and_replace(
+            {"_id": data_id},
+            local_data_copy,
+            upsert=True,
+            return_document=pymongo.ReturnDocument.AFTER
+        )
+        synchronized_data.pop('_id', None)
+
+        # Synchronize local data object with current data in database.
+        local_data.update(
+            synchronized_data
         )
 
 
