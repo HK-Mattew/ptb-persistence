@@ -3,6 +3,7 @@ from typing import (
     Tuple,
     Union
     )
+from logging import Logger
 from abc import ABCMeta, abstractmethod
 from telegram.ext import PersistenceInput
 
@@ -17,7 +18,7 @@ class DataStore(metaclass=ABCMeta):
     """
 
     @abstractmethod
-    async def post_init(self) -> None:
+    async def post_init(self, logger: Logger) -> None:
         """
         """
 
@@ -73,13 +74,13 @@ class DataStore(metaclass=ABCMeta):
 
 
     @abstractmethod
-    def build_persistence_input(self) -> PersistenceInput:
+    async def flush(self) -> None:
         """
         """
 
 
     @abstractmethod
-    async def flush(self) -> None:
+    def build_persistence_input(self) -> PersistenceInput:
         """
         """
     

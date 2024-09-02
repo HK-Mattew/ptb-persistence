@@ -5,6 +5,17 @@ import pymongo.errors
 import pytest
 import config
 
+import logging
+
+
+logger = logging.getLogger(name='PTBPersistence')
+logger.setLevel(logging.DEBUG)
+logger.addHandler(
+    logging.FileHandler(
+        filename='test-logs.log', encoding='utf-8'
+    )
+)
+
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
@@ -17,6 +28,7 @@ async def test_update_data(motor_client: AsyncIOMotorClient):
         database=config.MONGO_DB_NAME,
         collection_userdata='userdata'
     )
+    await data_store.post_init(logger=logger)
     
     result = await data_store.update_data(
         data_type='user',
@@ -36,6 +48,7 @@ async def test_get_data(motor_client: AsyncIOMotorClient):
         database=config.MONGO_DB_NAME,
         collection_userdata='userdata'
     )
+    await data_store.post_init(logger=logger)
     
     data = await data_store.get_data(
         data_type='user'
@@ -55,6 +68,7 @@ async def test_refresh_data(motor_client: AsyncIOMotorClient):
         database=config.MONGO_DB_NAME,
         collection_userdata='userdata'
     )
+    await data_store.post_init(logger=logger)
 
     local_user_data = {
         'my_key': 'value of my key',
@@ -87,6 +101,7 @@ async def test_drop_data(motor_client: AsyncIOMotorClient):
         database=config.MONGO_DB_NAME,
         collection_userdata='userdata'
     )
+    await data_store.post_init(logger=logger)
 
     drop_result = await data_store.drop_data(
         data_type='user',
@@ -111,6 +126,7 @@ async def test_update_conversation(motor_client: AsyncIOMotorClient):
         database=config.MONGO_DB_NAME,
         collection_conversationsdata='conversations'
     )
+    await data_store.post_init(logger=logger)
 
     result = await data_store.update_conversation(
         name='chatconv',
@@ -130,6 +146,7 @@ async def test_get_conversations(motor_client: AsyncIOMotorClient):
         database=config.MONGO_DB_NAME,
         collection_conversationsdata='conversations'
     )
+    await data_store.post_init(logger=logger)
 
     result = await data_store.get_conversations(
         name='chatconv'
@@ -149,6 +166,7 @@ async def test_build_persistence_input(motor_client: AsyncIOMotorClient):
         client_or_uri=motor_client,
         database=config.MONGO_DB_NAME
     )
+    await data_store.post_init(logger=logger)
 
     result = data_store.build_persistence_input()
 
@@ -161,6 +179,7 @@ async def test_flush_do_not_close_client(motor_client: AsyncIOMotorClient):
         client_or_uri=motor_client,
         database=config.MONGO_DB_NAME
     )
+    await data_store.post_init(logger=logger)
 
     result = await data_store.flush()
 
@@ -175,6 +194,7 @@ async def test_flush_close_client():
         client_or_uri=config.MONGO_DB_URI,
         database=config.MONGO_DB_NAME
     )
+    await data_store.post_init(logger=logger)
 
     result = await data_store.flush()
 

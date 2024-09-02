@@ -1,5 +1,6 @@
 __pycache__/
 .pytest_cache/
+test-logs.log
 .coverage
 config.py
 htmlcov/

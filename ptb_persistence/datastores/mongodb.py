@@ -13,9 +13,33 @@ from typing import (
     )
 
 from telegram.ext import PersistenceInput
+from logging import Logger
+import functools
 import pymongo
 import copy
 import ast
+
+
+
+def log_method(method):
+    method_name: str = method.__name__
+
+    @functools.wraps(method)
+    async def wrapper(self: 'MongoDBDataStore', *args, **kwargs):
+        if self._logger:
+            self._logger.debug(
+                f'MongoDBDataStore: Calling {method_name!r} method. Args: {args=} Kwargs: {kwargs=}'
+                )
+            
+        result = await method(self, *args, **kwargs)
+
+        if self._logger:
+            self._logger.debug(
+                f'MongoDBDataStore: Result of {method_name!r} method: {result!r}'
+                )
+        return result
+
+    return wrapper
 
 
 
@@ -143,7 +167,7 @@ class MongoDBDataStore(BaseDataStore):
         super().__init__()
 
 
-    async def post_init(self) -> None:
+    async def post_init(self, logger: Logger) -> None:
         if self._inited:
             return
         
@@ -152,11 +176,22 @@ class MongoDBDataStore(BaseDataStore):
         await self._bot_data.post_init()
         await self._conversations_data.post_init()
         
-        return await super().post_init()
+        return await super().post_init(
+            logger=logger
+        )
+    
+    def _check_inited(self) -> None:
+        """Raise RuntimeError if not yet initialized."""
+        if not self._inited:
+            raise RuntimeError(
+                'The DataStore must be initialized before any use.'
+                ' Initialize it with the .post_init(...) method.'
+            )
     
 
+    @log_method
     async def get_data(self, data_type, data_id: int | None = None) -> dict:
-        await self.post_init()
+        self._check_inited()
 
         data: dict = {}
 
@@ -179,8 +214,9 @@ class MongoDBDataStore(BaseDataStore):
         return data
 
 
+    @log_method
     async def update_data(self, data_type, data_id: int, local_data: dict) -> None:
-        await self.post_init()
+        self._check_inited()
 
         data_type = self._get_data_type(data_type)
         if not data_type.exists():
@@ -196,8 +232,9 @@ class MongoDBDataStore(BaseDataStore):
             )
 
 
+    @log_method
     async def refresh_data(self, data_type, data_id: int, local_data: dict) -> None:
-        await self.post_init()
+        self._check_inited()
 
         data_type = self._get_data_type(data_type)
         if not data_type.exists():
@@ -221,8 +258,9 @@ class MongoDBDataStore(BaseDataStore):
         )
 
 
+    @log_method
     async def drop_data(self, data_type, data_id: int) -> None:
-        await self.post_init()
+        self._check_inited()
 
         data_type = self._get_data_type(data_type)
         if not data_type.exists():
@@ -233,8 +271,9 @@ class MongoDBDataStore(BaseDataStore):
             )
 
 
+    @log_method
     async def get_conversations(self, name: str) -> dict:
-        await self.post_init()
+        self._check_inited()
 
         data_type = self._get_data_type(
             data_type='conversations'
@@ -257,12 +296,13 @@ class MongoDBDataStore(BaseDataStore):
         return data[name]
 
 
+    @log_method
     async def update_conversation(self,
             name: str,
             key: Tuple[Union[int, str], ...],
             local_state: object | None
             ) -> None:
-        await self.post_init()
+        self._check_inited()
 
         data_type = self._get_data_type(
             data_type='conversations'
@@ -280,6 +320,12 @@ class MongoDBDataStore(BaseDataStore):
         )
 
 
+    @log_method
+    async def flush(self) -> None:
+        if self._close_client:
+            self._client.close()
+
+
     def build_persistence_input(self) -> PersistenceInput:
         persistence_input = PersistenceInput(
             bot_data=self._bot_data.exists(),
@@ -288,11 +334,6 @@ class MongoDBDataStore(BaseDataStore):
             callback_data=False
         )
         return persistence_input
-
-
-    async def flush(self) -> None:
-        if self._close_client:
-            self._client.close()
 
 
     def _get_data_type(self,
