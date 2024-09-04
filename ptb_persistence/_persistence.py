@@ -1,10 +1,12 @@
 from typing import (
+    Union,
     Tuple,
     Dict,
     Any
     )
 import functools
 from .abc import DataStore
+from ._types import ConversationDict
 from logging import getLogger, Logger
 from telegram.ext import BasePersistence
 
@@ -191,6 +193,21 @@ class PTBPersistence(BasePersistence):
         await self._post_init()
         return await self._data_store.get_conversations(
             name=name
+        )
+
+
+    @log_method
+    async def refresh_conversation(
+        self,
+        name: str,
+        conversations_data: ConversationDict,
+        key: Tuple[Union[int, str], ...] | None = None,
+        ) -> None:
+        await self._post_init()
+        return await self._data_store.refresh_conversation(
+            name=name,
+            local_data=conversations_data,
+            key=key
         )
 
 

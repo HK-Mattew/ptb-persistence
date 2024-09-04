@@ -131,12 +131,32 @@ async def test_update_conversation(motor_client: AsyncIOMotorClient):
     result = await data_store.update_conversation(
         name='chatconv',
         key=(12345678, 12345678),
-        local_state={
-            'ping': 'pong'
-        }
+        local_state=1
     )
 
     assert result is None
+
+
+async def test_refresh_conversation(motor_client: AsyncIOMotorClient):
+
+    data_store = MongoDBDataStore(
+        client_or_uri=motor_client,
+        database=config.MONGO_DB_NAME,
+        collection_conversationsdata='conversations'
+    )
+    await data_store.post_init(logger=logger)
+
+    conversations_data = {}
+
+    result = await data_store.refresh_conversation(
+        name='chatconv',
+        local_data=conversations_data
+    )
+
+    assert result is None
+    assert conversations_data == {
+        (12345678, 12345678): 1
+    }
 
 
 async def test_get_conversations(motor_client: AsyncIOMotorClient):
@@ -155,9 +175,7 @@ async def test_get_conversations(motor_client: AsyncIOMotorClient):
     assert isinstance(result, dict)
     assert len(result) == 1
     assert (12345678, 12345678) in result
-    assert result[(12345678, 12345678)] == {
-        'ping': 'pong'
-    }
+    assert result[(12345678, 12345678)] == 1
 
 
 async def test_build_persistence_input(motor_client: AsyncIOMotorClient):

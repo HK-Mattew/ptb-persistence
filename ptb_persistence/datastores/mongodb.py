@@ -1,4 +1,5 @@
 from .base import BaseDataStore
+from .._types import ConversationDict
 
 from motor.motor_asyncio import (
     AsyncIOMotorClient,
@@ -294,6 +295,50 @@ class MongoDBDataStore(BaseDataStore):
             data[name] = {}
 
         return data[name]
+
+
+    @log_method
+    async def refresh_conversation(
+        self,
+        name: str,
+        local_data: ConversationDict,
+        key: Tuple[Union[int, str], ...] | None = None,
+        ) -> None:
+        self._check_inited()
+
+        data_type = self._get_data_type(
+            data_type='conversations'
+        )
+        if not data_type.exists():
+            return
+        
+
+        projection = []
+
+        if key is not None:
+            projection.append(str(key))
+
+        db_data: dict | None = await data_type.collection.find_one(
+            {
+                '_id': name
+            },
+            projection=(None if projection == [] else projection)
+        )
+
+        if db_data is None: return
+
+        db_data.pop('_id')
+
+        # Key to tuple
+        db_data = {
+            ast.literal_eval(key_str): value
+            for key_str, value in db_data.items()
+        }
+
+        # Synchronize local data object with current data in database.
+        local_data.update(
+            db_data
+        )
 
 
     @log_method
