@@ -241,16 +241,16 @@ class MongoDBDataStore(BaseDataStore):
         if not data_type.exists():
             return
         
-        synchronized_data: dict | None = await data_type.collection.find_one(
+        db_data: dict | None = await data_type.collection.find_one(
             {"_id": data_id},
         )
-        if synchronized_data is None: return
+        if db_data is None: return
 
-        synchronized_data.pop('_id', None)
+        db_data.pop('_id', None)
 
         # Synchronize local data object with current data in database.
         local_data.update(
-            synchronized_data
+            db_data
         )
 
 
