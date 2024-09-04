@@ -347,6 +347,18 @@ class MongoDBDataStore(BaseDataStore):
         if not data_type.exists():
             return
         
+        if local_state is None:
+            # Remove unnecessary data from the document.
+            await data_type.collection.update_one(
+                {'_id': name},
+                {
+                    '$unset': {
+                        str(key): ''
+                    }
+                }
+            )
+            return
+        
         await data_type.collection.replace_one(
             {'_id': name},
             {str(key): local_state},
