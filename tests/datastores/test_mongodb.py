@@ -70,10 +70,7 @@ async def test_refresh_data(motor_client: AsyncIOMotorClient):
     )
     await data_store.post_init(logger=logger)
 
-    local_user_data = {
-        'my_key': 'value of my key',
-        'other_key': 'value of other key'
-    }
+    local_user_data = {}
     
     result = await data_store.refresh_data(
         data_type='user',
@@ -82,15 +79,8 @@ async def test_refresh_data(motor_client: AsyncIOMotorClient):
     )
 
     assert result is None
-
-    store_user_datas = await data_store.get_data(
-        data_type='user',
-        data_id=12345678
-    )
-    assert 12345678 in store_user_datas
-    assert store_user_datas[12345678] == {
-        'my_key': 'value of my key',
-        'other_key': 'value of other key'
+    assert local_user_data == {
+        'my_key': 'value of my key'
     }
 
 

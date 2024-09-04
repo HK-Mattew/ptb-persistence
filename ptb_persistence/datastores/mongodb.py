@@ -241,16 +241,11 @@ class MongoDBDataStore(BaseDataStore):
         if not data_type.exists():
             return
         
-        local_data_copy = copy.deepcopy(local_data)
-        data_type.cleanup_local_data(local_data_copy)
-
-        # Synchronize database with local data and get new document.
-        synchronized_data: dict = await data_type.collection.find_one_and_replace(
+        synchronized_data: dict | None = await data_type.collection.find_one(
             {"_id": data_id},
-            local_data_copy,
-            upsert=True,
-            return_document=pymongo.ReturnDocument.AFTER
         )
+        if synchronized_data is None: return
+
         synchronized_data.pop('_id', None)
 
         # Synchronize local data object with current data in database.
