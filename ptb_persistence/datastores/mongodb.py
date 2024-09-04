@@ -93,7 +93,6 @@ class MongoDBDataStore(BaseDataStore):
             ignore_user_keys: list[str] = None,
             ignore_chat_keys: list[str] = None,
             ignore_bot_keys: list[str] = None,
-            ignore_conversations_keys: list[str] = None,
             ) -> None:
         """
         A data store implementation for MongoDB.
@@ -116,7 +115,6 @@ class MongoDBDataStore(BaseDataStore):
         :param ignore_user_keys: A list of keys to not persist in the user data store
         :param ignore_chat_keys: A list of keys to not persist in the chat data store
         :param ignore_bot_keys: A list of keys to not persist in the bot data store
-        :param ignore_conversations_keys: A list of keys to not persist in the conversation data store
         """
         
         if not isinstance(client_or_uri, AsyncIOMotorClient):
@@ -139,7 +137,6 @@ class MongoDBDataStore(BaseDataStore):
         ignore_user_keys = ignore_user_keys or []
         ignore_chat_keys = ignore_chat_keys or []
         ignore_bot_keys = ignore_bot_keys or []
-        ignore_conversations_keys = ignore_conversations_keys or []
 
         self._user_data = DataType(
             database=self._database,
@@ -162,7 +159,7 @@ class MongoDBDataStore(BaseDataStore):
         self._conversations_data = DataType(
             database=self._database,
             collection_input=collection_conversationsdata,
-            ignore_keys=ignore_general_keys + ignore_conversations_keys,
+            ignore_keys=[]
         )
 
         super().__init__()
@@ -349,9 +346,6 @@ class MongoDBDataStore(BaseDataStore):
         )
         if not data_type.exists():
             return
-        
-        local_state = copy.deepcopy(local_state)
-        data_type.cleanup_local_data(local_state)
         
         await data_type.collection.replace_one(
             {'_id': name},
