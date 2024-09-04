@@ -10,6 +10,8 @@ from ._types import ConversationDict
 from logging import getLogger, Logger
 from telegram.ext import BasePersistence
 
+import time
+
 
 
 def log_method(method):
@@ -20,9 +22,11 @@ def log_method(method):
         self._logger.debug(
             f'PTBPersistence: Calling {method_name!r} method. Args: {args=} Kwargs: {kwargs=}'
             )
+        start_time = time.time()
         result = await method(self, *args, **kwargs)
+        elapsed_time = time.time() - start_time
         self._logger.debug(
-            f'PTBPersistence: Result of {method_name!r} method: {result!r}'
+            f'PTBPersistence: Result of {method_name!r} method: {result!r} (Elapsed Time: {elapsed_time:.4f} seconds)'
             )
         return result
 
