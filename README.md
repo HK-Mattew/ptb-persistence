@@ -47,6 +47,17 @@ application = (
 
 ```
 
+## Support for multiple Workers/Processes
+This library is designed to work well with multi-worker bots. Typically bots that run in webhook mode and use load balancers between multiple instances of the same bot.
+
+### Conversational data persistence
+Currently, PTB does not have a method like refresh_conversation_data(...). And this prevents us from working with persistent conversations across multiple workers/processes.
+
+Here I work around this (Famous Hack) 😄,
+I created a custom Application.process_update method where I implement some logic to update conversational data. And this allows us to work with conversational data shared across multiple workers/processes.
+
+See the custom method (and also more details): [Here](https://github.com/HK-Mattew/ptb-persistence/blob/main/ptb_persistence/utils/ptb.py)
+
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first
