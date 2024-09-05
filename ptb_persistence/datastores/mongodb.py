@@ -1,4 +1,5 @@
 from .base import BaseDataStore
+from .._types import ConversationDict
 
 from motor.motor_asyncio import (
     AsyncIOMotorClient,
@@ -92,7 +93,6 @@ class MongoDBDataStore(BaseDataStore):
             ignore_user_keys: list[str] = None,
             ignore_chat_keys: list[str] = None,
             ignore_bot_keys: list[str] = None,
-            ignore_conversations_keys: list[str] = None,
             ) -> None:
         """
         A data store implementation for MongoDB.
@@ -115,7 +115,6 @@ class MongoDBDataStore(BaseDataStore):
         :param ignore_user_keys: A list of keys to not persist in the user data store
         :param ignore_chat_keys: A list of keys to not persist in the chat data store
         :param ignore_bot_keys: A list of keys to not persist in the bot data store
-        :param ignore_conversations_keys: A list of keys to not persist in the conversation data store
         """
         
         if not isinstance(client_or_uri, AsyncIOMotorClient):
@@ -138,7 +137,6 @@ class MongoDBDataStore(BaseDataStore):
         ignore_user_keys = ignore_user_keys or []
         ignore_chat_keys = ignore_chat_keys or []
         ignore_bot_keys = ignore_bot_keys or []
-        ignore_conversations_keys = ignore_conversations_keys or []
 
         self._user_data = DataType(
             database=self._database,
@@ -161,7 +159,7 @@ class MongoDBDataStore(BaseDataStore):
         self._conversations_data = DataType(
             database=self._database,
             collection_input=collection_conversationsdata,
-            ignore_keys=ignore_general_keys + ignore_conversations_keys,
+            ignore_keys=[]
         )
 
         super().__init__()
@@ -240,21 +238,16 @@ class MongoDBDataStore(BaseDataStore):
         if not data_type.exists():
             return
         
-        local_data_copy = copy.deepcopy(local_data)
-        data_type.cleanup_local_data(local_data_copy)
-
-        # Synchronize database with local data and get new document.
-        synchronized_data: dict = await data_type.collection.find_one_and_replace(
+        db_data: dict | None = await data_type.collection.find_one(
             {"_id": data_id},
-            local_data_copy,
-            upsert=True,
-            return_document=pymongo.ReturnDocument.AFTER
         )
-        synchronized_data.pop('_id', None)
+        if db_data is None: return
+
+        db_data.pop('_id', None)
 
         # Synchronize local data object with current data in database.
         local_data.update(
-            synchronized_data
+            db_data
         )
 
 
@@ -297,6 +290,50 @@ class MongoDBDataStore(BaseDataStore):
 
 
     @log_method
+    async def refresh_conversation(
+        self,
+        name: str,
+        local_data: ConversationDict,
+        key: Tuple[Union[int, str], ...] | None = None,
+        ) -> None:
+        self._check_inited()
+
+        data_type = self._get_data_type(
+            data_type='conversations'
+        )
+        if not data_type.exists():
+            return
+        
+
+        projection = []
+
+        if key is not None:
+            projection.append(str(key))
+
+        db_data: dict | None = await data_type.collection.find_one(
+            {
+                '_id': name
+            },
+            projection=(None if projection == [] else projection)
+        )
+
+        if db_data is None: return
+
+        db_data.pop('_id')
+
+        # Key to tuple
+        db_data = {
+            ast.literal_eval(key_str): value
+            for key_str, value in db_data.items()
+        }
+
+        # Synchronize local data object with current data in database.
+        local_data.update(
+            db_data
+        )
+
+
+    @log_method
     async def update_conversation(self,
             name: str,
             key: Tuple[Union[int, str], ...],
@@ -310,8 +347,17 @@ class MongoDBDataStore(BaseDataStore):
         if not data_type.exists():
             return
         
-        local_state = copy.deepcopy(local_state)
-        data_type.cleanup_local_data(local_state)
+        if local_state is None:
+            # Remove unnecessary data from the document.
+            await data_type.collection.update_one(
+                {'_id': name},
+                {
+                    '$unset': {
+                        str(key): ''
+                    }
+                }
+            )
+            return
         
         await data_type.collection.replace_one(
             {'_id': name},

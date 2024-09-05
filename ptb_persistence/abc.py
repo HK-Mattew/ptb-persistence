@@ -1,3 +1,4 @@
+from ._types import ConversationDict
 from typing import (
     Literal,
     Tuple,
@@ -59,6 +60,17 @@ class DataStore(metaclass=ABCMeta):
 
     @abstractmethod
     async def get_conversations(self, name: str) -> dict:
+        """
+        """
+
+
+    @abstractmethod
+    async def refresh_conversation(
+        self,
+        name: str,
+        local_data: ConversationDict,
+        key: Tuple[Union[int, str], ...] | None = None,
+        ) -> None:
         """
         """
 

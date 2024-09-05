@@ -70,10 +70,7 @@ async def test_refresh_data(motor_client: AsyncIOMotorClient):
     )
     await data_store.post_init(logger=logger)
 
-    local_user_data = {
-        'my_key': 'value of my key',
-        'other_key': 'value of other key'
-    }
+    local_user_data = {}
     
     result = await data_store.refresh_data(
         data_type='user',
@@ -82,15 +79,8 @@ async def test_refresh_data(motor_client: AsyncIOMotorClient):
     )
 
     assert result is None
-
-    store_user_datas = await data_store.get_data(
-        data_type='user',
-        data_id=12345678
-    )
-    assert 12345678 in store_user_datas
-    assert store_user_datas[12345678] == {
-        'my_key': 'value of my key',
-        'other_key': 'value of other key'
+    assert local_user_data == {
+        'my_key': 'value of my key'
     }
 
 
@@ -131,12 +121,32 @@ async def test_update_conversation(motor_client: AsyncIOMotorClient):
     result = await data_store.update_conversation(
         name='chatconv',
         key=(12345678, 12345678),
-        local_state={
-            'ping': 'pong'
-        }
+        local_state=1
     )
 
     assert result is None
+
+
+async def test_refresh_conversation(motor_client: AsyncIOMotorClient):
+
+    data_store = MongoDBDataStore(
+        client_or_uri=motor_client,
+        database=config.MONGO_DB_NAME,
+        collection_conversationsdata='conversations'
+    )
+    await data_store.post_init(logger=logger)
+
+    conversations_data = {}
+
+    result = await data_store.refresh_conversation(
+        name='chatconv',
+        local_data=conversations_data
+    )
+
+    assert result is None
+    assert conversations_data == {
+        (12345678, 12345678): 1
+    }
 
 
 async def test_get_conversations(motor_client: AsyncIOMotorClient):
@@ -155,9 +165,32 @@ async def test_get_conversations(motor_client: AsyncIOMotorClient):
     assert isinstance(result, dict)
     assert len(result) == 1
     assert (12345678, 12345678) in result
-    assert result[(12345678, 12345678)] == {
-        'ping': 'pong'
-    }
+    assert result[(12345678, 12345678)] == 1
+
+
+async def test_update_conversation_state_none(motor_client: AsyncIOMotorClient):
+
+    data_store = MongoDBDataStore(
+        client_or_uri=motor_client,
+        database=config.MONGO_DB_NAME,
+        collection_conversationsdata='conversations'
+    )
+    await data_store.post_init(logger=logger)
+
+    result_update = await data_store.update_conversation(
+        name='chatconv',
+        key=(12345678, 12345678),
+        local_state=None
+    )
+
+    assert result_update is None
+
+    result = await data_store.get_conversations(
+        name='chatconv'
+    )
+
+    assert isinstance(result, dict)
+    assert (12345678, 12345678) not in result
 
 
 async def test_build_persistence_input(motor_client: AsyncIOMotorClient):
