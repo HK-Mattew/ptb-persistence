@@ -274,27 +274,26 @@ class MongoDBDataStore(BaseDataStore):
         if not data_type.exists():
             return {}
 
-        data: dict = {}
 
-        if doc := await data_type.collection.find_one({"_id": name}):
-            doc: dict
-            doc.pop('_id')
-            data[name] = {
-                ast.literal_eval(key_str): value
-                for key_str, value in doc.items()
-            }
-        else:
-            data[name] = {}
+        cursor = data_type.collection.find(
+            {"_id.name": name},
+            batch_size=10000,
+            allow_disk_use=True
+            )
+        
+        convs: dict[tuple[int | str], int] = {}
+        async for doc in cursor:
+            convs[ast.literal_eval(doc['_id']['key'])] = doc['state']
 
-        return data[name]
+        return convs
 
 
     @log_method
     async def refresh_conversation(
         self,
         name: str,
-        local_data: ConversationDict,
-        key: Tuple[Union[int, str], ...] | None = None,
+        key: Tuple[Union[int, str], ...],
+        local_data: ConversationDict
         ) -> None:
         self._check_inited()
 
@@ -303,33 +302,17 @@ class MongoDBDataStore(BaseDataStore):
         )
         if not data_type.exists():
             return
-        
 
-        projection = []
-
-        if key is not None:
-            projection.append(str(key))
-
+        doc_id = {'name': name, 'key': str(key)}
         db_data: dict | None = await data_type.collection.find_one(
-            {
-                '_id': name
-            },
-            projection=(None if projection == [] else projection)
+            {'_id': doc_id}
         )
 
         if db_data is None: return
 
-        db_data.pop('_id')
-
-        # Key to tuple
-        db_data = {
-            ast.literal_eval(key_str): value
-            for key_str, value in db_data.items()
-        }
-
         # Synchronize local data object with current data in database.
         local_data.update(
-            db_data
+            {key: db_data['state']}
         )
 
 
@@ -347,21 +330,19 @@ class MongoDBDataStore(BaseDataStore):
         if not data_type.exists():
             return
         
+
+        doc_id = {'name': name, 'key': str(key)}
+        
         if local_state is None:
             # Remove unnecessary data from the document.
-            await data_type.collection.update_one(
-                {'_id': name},
-                {
-                    '$unset': {
-                        str(key): ''
-                    }
-                }
+            await data_type.collection.delete_one(
+                {'_id': doc_id}
             )
             return
         
         await data_type.collection.replace_one(
-            {'_id': name},
-            {str(key): local_state},
+            {'_id': doc_id},
+            {'state': local_state},
             upsert=True
         )
 
