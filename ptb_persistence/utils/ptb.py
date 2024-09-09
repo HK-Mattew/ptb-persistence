@@ -53,8 +53,8 @@ async def _refresh_conversation_data(
 
     await persistence.refresh_conversation(
         name=handler.name,
-        conversations_data=handler._conversations,
-        key=key
+        key=key,
+        conversations_data=handler._conversations
     )
 
 

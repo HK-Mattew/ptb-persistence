@@ -140,6 +140,7 @@ async def test_refresh_conversation(motor_client: AsyncIOMotorClient):
 
     result = await data_store.refresh_conversation(
         name='chatconv',
+        key=(12345678, 12345678),
         local_data=conversations_data
     )
 

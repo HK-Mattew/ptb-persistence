@@ -204,14 +204,14 @@ class PTBPersistence(BasePersistence):
     async def refresh_conversation(
         self,
         name: str,
+        key: Tuple[Union[int, str], ...],
         conversations_data: ConversationDict,
-        key: Tuple[Union[int, str], ...] | None = None,
         ) -> None:
         await self._post_init()
         return await self._data_store.refresh_conversation(
             name=name,
-            local_data=conversations_data,
-            key=key
+            key=key,
+            local_data=conversations_data
         )
 
 

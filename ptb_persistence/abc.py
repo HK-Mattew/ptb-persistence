@@ -68,8 +68,8 @@ class DataStore(metaclass=ABCMeta):
     async def refresh_conversation(
         self,
         name: str,
+        key: Tuple[Union[int, str], ...],
         local_data: ConversationDict,
-        key: Tuple[Union[int, str], ...] | None = None,
         ) -> None:
         """
         """
