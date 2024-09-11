@@ -58,47 +58,7 @@ async def _refresh_conversation_data(
     )
 
 
-
-"""
-Modified process_update(...) method from PTB's Application.process_update.
-
-PTB currently does not have an integrated method for refreshing conversation data.,
-However, this is essential when working with a bot that runs in multi-worker webhook mode.,
-Refreshing conversation data is essential for synchronizing data from the datastore (database),
-with the current conversation data in the process memory.
-
-
-So since PTB does not have this integrated method,
-I created this custom process_update method to be able to refresh conversation data.
-
-How to Use:
-from ptb_persistence import PTBPersistence
-from ptb_persistence.utils.ptb import process_update
-
-from ptb_persistence.datastores.mongodb import MongoDBDataStore
-from telegram.ext import Application
-
-data_store = MongoDBDataStore( ... )
-
-ptb_persistence = PTBPersistence( data_store=data_store )
-
-application = Application.builder().token("<bot-token>").persistence(ptb_persistence).build()
-
-# Overwrite the original process_update method with the custom
-application.process_update = process_update
-
-
-# Remember that:
-# 
-# To work with persistent conversation data,
-# you must enable this in your preferred data store.
-# Example: MongoDBDataStore(..., collection_conversationsdata=...)
-# 
-# Another very important point: In the PTB ConversationHandler class,
-# you must define the parameters persistent=True and name='<any-name-here>'.
-# Example: ConversationHandler(..., persistent=True, name='my-handler')
-"""
-async def process_update(self: Application, update: object) -> None:
+async def _process_update(self: Application, update: object) -> None:
     """Processes a single update and marks the update to be updated by the persistence later.
     Exceptions raised by handler callbacks will be processed by :meth:`process_error`.
 
@@ -175,3 +135,46 @@ async def process_update(self: Application, update: object) -> None:
         self._mark_for_persistence_update(update=update)
 
 
+
+"""
+Application with modified process_update(...) method, PTB Application class.
+
+PTB currently does not have a built-in method to update conversation data.
+
+However, this is essential when working with a bot that runs in multi-worker webhook mode.
+
+Updating conversation data is essential to synchronize data from the datastore (database),
+with the current conversation data in the process memory.
+
+So, since PTB does not have this built-in method,
+I created this custom CustomApplication class to be able to update conversation data by calling the Application.process_update(...) method.
+
+How to use:
+from ptb_persistence import PTBPersistence
+from ptb_persistence.utils.ptb import CustomApplication
+
+from ptb_persistence.datastores.mongodb import MongoDBDataStore
+from telegram.ext import Application
+
+data_store = MongoDBDataStore( ... )
+
+ptb_persistence = PTBPersistence(data_store=data_store)
+
+application = Application.builder().application_class(CustomApplication).token("<bot-token>").persistence(ptb_persistence).build()
+
+# Remember that:
+#
+# To work with persistent conversation data,
+# you must enable this in your preferred data store. # Example: MongoDBDataStore(..., collection_conversationsdata=...)
+#
+# Another very important point: In the PTB ConversationHandler class,
+# you must define the parameters persistent=True and name='<any-name-here>'.
+# Example: ConversationHandler(..., persistent=True, name='my-handler')
+"""
+class CustomApplication(Application):
+    async def process_update(self, update: object) -> None:
+        return await _process_update(
+            self=self,
+            update=update
+        )
+    
