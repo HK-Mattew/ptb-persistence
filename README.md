@@ -54,9 +54,9 @@ This library is designed to work well with multi-worker bots. Typically bots tha
 Currently, PTB does not have a method like refresh_conversation_data(...). And this prevents us from working with persistent conversations across multiple workers/processes.
 
 Here I work around this (Famous Hack) 😄,
-I created a custom Application.process_update method where I implement some logic to update conversational data. And this allows us to work with conversational data shared across multiple workers/processes.
+I created a custom Application class where I implement some logic to update conversation data. And this allows us to work with conversation data shared between multiple workers/processes.
 
-See the custom method (and also more details): [Here](https://github.com/HK-Mattew/ptb-persistence/blob/main/ptb_persistence/utils/ptb.py)
+See the custom CustomApplication class (and also more details): [Here](https://github.com/HK-Mattew/ptb-persistence/blob/main/ptb_persistence/utils/ptb.py)
 
 ## Contributing
 
